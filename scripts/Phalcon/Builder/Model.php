@@ -309,6 +309,14 @@ class Model extends Component
                 if ($this->options->contains('namespace')) {
                     $fullClassName = $this->options->get('namespace').'\\'.$fullClassName;
                 }
+                // DONE(limx):加载use
+                foreach ($linesCode as $line) {
+                    preg_match('#^use .+;$#', $line, $matches);
+                    if (isset($matches[0])) {
+                        $uses[] = $matches[0];
+                    }
+                }
+
                 $reflection = new ReflectionClass($fullClassName);
                 foreach ($reflection->getMethods() as $method) {
                     if ($method->getDeclaringClass()->getName() != $fullClassName) {
@@ -491,6 +499,8 @@ class Model extends Component
 
         $useDefinition = '';
         if (!empty($uses)) {
+            // DONE(limx):uses去重
+            $uses = array_unique($uses);
             usort($uses, function ($a, $b) {
                 return strlen($a) - strlen($b);
             });
