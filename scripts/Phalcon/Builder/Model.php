@@ -191,6 +191,10 @@ class Model extends Component
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
             $namespace = 'namespace '.$this->options->get('namespace').';'.PHP_EOL.PHP_EOL;
         }
+        // DONE(limx): 如果设置了命名空间，默认使用命名空间
+        if (empty($namespace) && !empty($config->model->namespace)) {
+            $namespace = 'namespace ' . $config->model->namespace . ';' . PHP_EOL . PHP_EOL;
+        }
 
         $genDocMethods = $this->options->get('genDocMethods', false);
         $useSettersGetters = $this->options->get('genSettersGetters', false);
@@ -249,6 +253,10 @@ class Model extends Component
                 if ($this->options->contains('namespace')) {
                     $entityNamespace = $this->options->get('namespace')."\\";
                 }
+                // DONE(limx): 如果设置了命名空间则当$entityNamespace为空时，默认使用设置的默认命名空间
+                if (empty($entityNamespace) && !empty($config->model->namespace)) {
+                    $entityNamespace = $config->model->namespace . "\\";
+                }
 
                 $refColumns = $reference->getReferencedColumns();
                 $columns = $reference->getColumns();
@@ -266,6 +274,10 @@ class Model extends Component
             $entityNamespace = '';
             if ($this->options->contains('namespace')) {
                 $entityNamespace = $this->options->get('namespace')."\\";
+            }
+            // DONE(limx): 如果设置了命名空间则当$entityNamespace为空时，默认使用设置的默认命名空间
+            if (empty($entityNamespace) && !empty($config->model->namespace)) {
+                $entityNamespace = $config->model->namespace . "\\";
             }
 
             $refColumns = $reference->getReferencedColumns();
@@ -308,6 +320,9 @@ class Model extends Component
                 $fullClassName = $this->options->get('className');
                 if ($this->options->contains('namespace')) {
                     $fullClassName = $this->options->get('namespace').'\\'.$fullClassName;
+                } else if (!empty($config->model->namespace)) {
+                    // DONE(limx): 如果设置了命名空间，默认使用命名空间
+                    $fullClassName = $config->model->namespace . '\\' . $fullClassName;
                 }
                 // DONE(limx):加载use
                 foreach ($linesCode as $line) {
@@ -413,7 +428,15 @@ class Model extends Component
         }
 
         // Check if there has been an extender class
-        $extends = $this->options->get('extends', '\Phalcon\Mvc\Model');
+        $extends = $this->options->get('extends');
+        // DONE(limx): 如果在配置中设置过基类，默认使用基类，如果没有设置，则使用 \Phalcon\Mvc\Model
+        if (!$extends) {
+            if (empty($config->model->extends)) {
+                $extends = '\Phalcon\Mvc\Model';
+            } else {
+                $extends = $config->model->extends;
+            }
+        }
 
         // Check if there have been any excluded fields
         $exclude = [];
