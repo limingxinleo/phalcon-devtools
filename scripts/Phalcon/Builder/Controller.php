@@ -58,6 +58,9 @@ class Controller extends Component
      */
     public function build()
     {
+        // DONE(limx): 加载配置
+        $config = $this->getConfig();
+
         if ($this->options->contains('directory')) {
             $this->path->setRootPath($this->options->get('directory'));
         }
@@ -66,8 +69,20 @@ class Controller extends Component
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
             $namespace = 'namespace '.$this->options->get('namespace').';'.PHP_EOL.PHP_EOL;
         }
+        // DONE(limx): 如果设置了命名空间，默认使用命名空间
+        if (empty($namespace) && !empty($config->controller->namespace)) {
+            $namespace = 'namespace ' . $config->controller->namespace . ';' . PHP_EOL . PHP_EOL;
+        }
 
-        $baseClass = $this->options->get('baseClass', '\Phalcon\Mvc\Controller');
+        $baseClass = $this->options->get('baseClass');
+        // DONE(limx): 如果在配置中设置过基类，默认使用基类，如果没有设置，则使用 \Phalcon\Mvc\Controller
+        if (!$baseClass) {
+            if (empty($config->controller->baseClass)) {
+                $baseClass = '\Phalcon\Mvc\Controller';
+            } else {
+                $baseClass = $config->controller->baseClass;
+            }
+        }
 
         if (!$controllersDir = $this->options->get('controllersDir')) {
             $config = $this->getConfig();
