@@ -60,14 +60,25 @@ class Controller extends Component
     {
         // DONE(limx): 加载配置
         $config = $this->getConfig();
-
+        // use列表
+        $uses = [];
         if ($this->options->contains('directory')) {
             $this->path->setRootPath($this->options->get('directory'));
+        }
+
+        // DONE(limx):如果有子目录，则记录子目录
+        $subdir = '';
+        if ($this->options->contains('subdir')) {
+            $subdir = $this->options->get('subdir');
         }
 
         $namespace = '';
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
             $namespace = 'namespace '.$this->options->get('namespace').';'.PHP_EOL.PHP_EOL;
+            // DONE(limx):如果有子目录，则重写命名空间
+            if (!empty($subdir)) {
+                $namespace = 'namespace ' . $this->options->get('namespace') . '\\' . Utils::camelize($subdir) . ';' . PHP_EOL . PHP_EOL;
+            }
         }
         // DONE(limx): 如果设置了命名空间，默认使用命名空间
         if (empty($namespace) && !empty($config->controller->namespace)) {
@@ -81,6 +92,10 @@ class Controller extends Component
                 $baseClass = '\Phalcon\Mvc\Controller';
             } else {
                 $baseClass = $config->controller->baseClass;
+                // DONE(limx):如果有子目录，则use控制器基类
+                if (!empty($subdir)) {
+                    $uses[] = "use App\\Controllers\\Controller;";
+                }
             }
         }
 
@@ -107,8 +122,21 @@ class Controller extends Component
         }
 
         $controllerPath = rtrim($controllersDir, '\\/') . DIRECTORY_SEPARATOR . $className . "Controller.php";
+        // DONE(limx):如果有子目录，则修改文件目录
+        if (!empty($subdir)) {
+            $tempDir = rtrim($controllersDir, '\\/') . DIRECTORY_SEPARATOR . $subdir;
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0777, true);
+            }
+            $controllerPath = $tempDir . DIRECTORY_SEPARATOR . $className . "Controller.php";
+        }
+        $useDefinition = "";
+        // DONE(limx):如果有子目录，则修改文件目录
+        if (!empty($uses)) {
+            $useDefinition = join("\n", $uses) . PHP_EOL . PHP_EOL;
+        }
 
-        $code = "<?php\n\n".$namespace."class ".$className."Controller extends ".$baseClass."\n{\n\n\tpublic function indexAction()\n\t{\n\n\t}\n\n}\n\n";
+        $code = "<?php\n\n".$namespace.$useDefinition."class ".$className."Controller extends ".$baseClass."\n{\n\n\tpublic function indexAction()\n\t{\n\n\t}\n\n}\n\n";
         $code = str_replace("\t", "    ", $code);
 
         if (file_exists($controllerPath) && !$this->options->contains('force')) {
