@@ -75,14 +75,14 @@ class Controller extends Component
         $namespace = '';
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
             $namespace = 'namespace '.$this->options->get('namespace').';'.PHP_EOL.PHP_EOL;
-            // DONE(limx):如果有子目录，则重写命名空间
-            if (!empty($subdir)) {
-                $namespace = 'namespace ' . $this->options->get('namespace') . '\\' . Utils::camelize($subdir) . ';' . PHP_EOL . PHP_EOL;
-            }
         }
         // DONE(limx): 如果设置了命名空间，默认使用命名空间
         if (empty($namespace) && !empty($config->controller->namespace)) {
             $namespace = 'namespace ' . $config->controller->namespace . ';' . PHP_EOL . PHP_EOL;
+            // DONE(limx):如果有子目录，则重写命名空间
+            if (!empty($subdir)) {
+                $namespace = 'namespace ' . $config->controller->namespace . '\\' . Utils::camelize($subdir) . ';' . PHP_EOL . PHP_EOL;
+            }
         }
 
         $baseClass = $this->options->get('baseClass');
