@@ -35,6 +35,7 @@ use Phalcon\Commands\Builtin\Migration;
 use Phalcon\Commands\Builtin\Enumerate;
 use Phalcon\Commands\Builtin\Controller;
 use Phalcon\Commands\Builtin\Console;
+use Phalcon\Commands\Builtin\Task;
 use Phalcon\Exception as PhalconException;
 use Phalcon\Events\Manager as EventsManager;
 
@@ -62,6 +63,8 @@ try {
         Migration::class,
         Webtools::class,
         Console::class,
+
+        Task::class,
     ];
 
     $script->loadUserScripts();
