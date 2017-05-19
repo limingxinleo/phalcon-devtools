@@ -66,13 +66,23 @@ class Task extends Component
             $this->path->setRootPath($this->options->get('directory'));
         }
 
+        // DONE(limx):如果有子目录，则记录子目录
+        $subdir = '';
+        if ($this->options->contains('subdir')) {
+            $subdir = $this->options->get('subdir');
+        }
+
         $namespace = '';
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
-            $namespace = 'namespace '.$this->options->get('namespace').';'.PHP_EOL.PHP_EOL;
+            $namespace = 'namespace ' . $this->options->get('namespace') . ';' . PHP_EOL . PHP_EOL;
         }
         // DONE(limx): 如果设置了命名空间，默认使用命名空间
         if (empty($namespace) && !empty($config->task->namespace)) {
             $namespace = 'namespace ' . $config->task->namespace . ';' . PHP_EOL . PHP_EOL;
+            // DONE(limx):如果有子目录，则重写命名空间
+            if (!empty($subdir)) {
+                $namespace = 'namespace ' . $config->task->namespace . '\\' . Utils::camelize($subdir) . ';' . PHP_EOL . PHP_EOL;
+            }
         }
 
         $baseClass = $this->options->get('baseClass');
@@ -82,6 +92,10 @@ class Task extends Component
                 $baseClass = '\Phalcon\Cli\Task';
             } else {
                 $baseClass = $config->task->baseClass;
+                // DONE(limx):如果有子目录，则use控制器基类
+                if (!empty($subdir)) {
+                    $uses[] = sprintf("use App\\Tasks\\%s;", $baseClass);
+                }
             }
         }
 
@@ -108,8 +122,22 @@ class Task extends Component
         }
 
         $taskPath = rtrim($tasksDir, '\\/') . DIRECTORY_SEPARATOR . $className . "Task.php";
+        // DONE(limx):如果有子目录，则修改文件目录
+        if (!empty($subdir)) {
+            $tempDir = rtrim($tasksDir, '\\/') . DIRECTORY_SEPARATOR . $subdir;
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0777, true);
+            }
+            $taskPath = $tempDir . DIRECTORY_SEPARATOR . $className . "Task.php";
+        }
 
-        $code = "<?php\n\n".$namespace."class ".$className."Task extends ".$baseClass."\n{\n\n\tpublic function mainAction()\n\t{\n\n\t}\n\n}\n\n";
+        $useDefinition = "";
+        // DONE(limx):如果有子目录，则修改文件目录
+        if (!empty($uses)) {
+            $useDefinition = join("\n", $uses) . PHP_EOL . PHP_EOL;
+        }
+
+        $code = "<?php\n\n" . $namespace . $useDefinition . "class " . $className . "Task extends " . $baseClass . "\n{\n\n\tpublic function mainAction()\n\t{\n\n\t}\n\n}\n\n";
         $code = str_replace("\t", "    ", $code);
 
         if (file_exists($taskPath) && !$this->options->contains('force')) {

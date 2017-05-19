@@ -49,6 +49,7 @@ class Task extends Command
             'base-class=s' => 'Base class to be inherited by the Task [optional]',
             'force' => 'Force to rewrite Task [optional]',
             'help' => 'Shows this help [optional]',
+            'subdir=s' => '文件子目录',
         ];
     }
 
@@ -68,6 +69,7 @@ class Task extends Command
             'controllersDir' => $this->getOption('output'),
             'namespace' => $this->getOption('namespace'),
             'baseClass' => $this->getOption('base-class'),
+            'subdir' => $this->getOption('subdir'),
             'force' => $this->isReceivedOption('force')
         ]);
 
