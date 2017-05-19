@@ -94,7 +94,7 @@ class Controller extends Component
                 $baseClass = $config->controller->baseClass;
                 // DONE(limx):如果有子目录，则use控制器基类
                 if (!empty($subdir)) {
-                    $uses[] = "use App\\Controllers\\Controller;";
+                    $uses[] = sprintf("use App\\Controllers\\%s;", $baseClass);
                 }
             }
         }
