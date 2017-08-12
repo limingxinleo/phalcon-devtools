@@ -36,6 +36,7 @@ use Phalcon\Commands\Builtin\Enumerate;
 use Phalcon\Commands\Builtin\Controller;
 use Phalcon\Commands\Builtin\Console;
 use Phalcon\Commands\Builtin\Task;
+use Phalcon\Commands\Builtin\Logic;
 use Phalcon\Exception as PhalconException;
 use Phalcon\Events\Manager as EventsManager;
 
@@ -65,6 +66,7 @@ try {
         Console::class,
 
         Task::class,
+        Logic::class,
     ];
 
     $script->loadUserScripts();
