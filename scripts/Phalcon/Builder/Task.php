@@ -26,9 +26,9 @@ use Phalcon\Utils;
 use SplFileObject;
 
 /**
- * Controller Class
+ * Task Class
  *
- * Builder to generate controller
+ * Builder to generate task
  *
  * @package Phalcon\Builder
  */
@@ -86,7 +86,7 @@ class Task extends Component
         }
 
         $baseClass = $this->options->get('baseClass');
-        // DONE(limx): 如果在配置中设置过基类，默认使用基类，如果没有设置，则使用 \Phalcon\Mvc\Controller
+        // DONE(limx): 如果在配置中设置过基类，默认使用基类，如果没有设置，则使用 \Phalcon\Cli\Task
         if (!$baseClass) {
             if (empty($config->task->baseClass)) {
                 $baseClass = '\Phalcon\Cli\Task';

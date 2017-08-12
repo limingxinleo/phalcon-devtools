@@ -26,7 +26,7 @@ use Phalcon\Commands\Command;
 use Phalcon\Builder\Task as TaskBuilder;
 
 /**
- * Controller Command
+ * Task Command
  *
  * Create a handler for the command line.
  *
