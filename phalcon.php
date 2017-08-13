@@ -37,6 +37,7 @@ use Phalcon\Commands\Builtin\Controller;
 use Phalcon\Commands\Builtin\Console;
 use Phalcon\Commands\Builtin\Task;
 use Phalcon\Commands\Builtin\Logic;
+use Phalcon\Commands\Builtin\Job;
 use Phalcon\Exception as PhalconException;
 use Phalcon\Events\Manager as EventsManager;
 
@@ -67,6 +68,7 @@ try {
 
         Task::class,
         Logic::class,
+        Job::class,
     ];
 
     $script->loadUserScripts();
