@@ -28,6 +28,7 @@ use Phalcon\Validation;
 use Phalcon\Generator\Snippet;
 use Phalcon\Db\ReferenceInterface;
 use Phalcon\Validation\Validator\Email as EmailValidator;
+use Phalcon\Text;
 
 
 /**
@@ -75,11 +76,11 @@ class Model extends Component
         }
 
         if (!isset($options['className'])) {
-            $options['className'] = Utils::camelize($options['name']);
+            $options['className'] = Text::camelize($options['name'], '_-');
         }
 
         if (!isset($options['fileName'])) {
-            $options['fileName'] = $options['name'];
+            $options['fileName'] = Text::camelize($options['name'], '_-');
         }
 
         if (!isset($options['abstract'])) {
@@ -233,19 +234,25 @@ class Model extends Component
         if ($schema) {
             $initialize['schema'] = $this->snippet->getThisMethod('setSchema', $schema);
         }
+        $initialize['source'] = $this->snippet->getThisMethod('setSource', $this->options->get('name'));
 
         $table = $this->options->get('name');
-        if ($this->options->get('fileName') != $table && !isset($initialize['schema'])) {
-            $initialize[] = $this->snippet->getThisMethod('setSource', $table);
-        }
 
         if (!$db->tableExists($table, $schema)) {
             throw new BuilderException(sprintf('Table "%s" does not exist.', $table));
         }
         $fields = $db->describeColumns($table, $schema);
 
-        foreach ($db->listTables() as $tableName) {
-            foreach ($db->describeReferences($tableName, $schema) as $reference) {
+        if (!$this->options->contains('referenceList')) {
+            foreach ($db->listTables($schema) as $name) {
+                $referenceList[$name] = $db->describeReferences($name, $schema);;
+            }
+        } else {
+            $referenceList = $this->options->get('referenceList');
+        }
+
+        foreach ($referenceList as $tableName => $references) {
+            foreach ($references as $reference) {
                 if ($reference->getReferencedTable() != $this->options->get('name')) {
                     continue;
                 }
@@ -264,9 +271,9 @@ class Model extends Component
                 $initialize[] = $this->snippet->getRelation(
                     'hasMany',
                     $this->options->get('camelize') ? Utils::lowerCamelize($refColumns[0]) : $refColumns[0],
-                    $entityNamespace . Utils::camelize($tableName),
+                    $entityNamespace . Text::camelize($tableName, '_-'),
                     $this->options->get('camelize') ? Utils::lowerCamelize($columns[0]) : $columns[0],
-                    "['alias' => '" . Utils::camelize($tableName) . "']"
+                    "['alias' => '" . Text::camelize($tableName, '_-') . "']"
                 );
             }
         }
@@ -288,7 +295,7 @@ class Model extends Component
                 $this->options->get('camelize') ? Utils::lowerCamelize($columns[0]) : $columns[0],
                 $this->getEntityClassName($reference, $entityNamespace),
                 $this->options->get('camelize') ? Utils::lowerCamelize($refColumns[0]) : $refColumns[0],
-                "['alias' => '" . Utils::camelize($reference->getReferencedTable()) . "']"
+                "['alias' => '" . Text::camelize($reference->getReferencedTable(), '_-') . "']"
             );
         }
 
@@ -305,7 +312,7 @@ class Model extends Component
                 if ($useSettersGetters) {
                     foreach ($fields as $field) {
                         /** @var \Phalcon\Db\Column $field */
-                        $methodName = Utils::camelize($field->getName());
+                        $methodName = Text::camelize($field->getName(), '_-');
 
                         $possibleMethods['set' . $methodName] = true;
                         $possibleMethods['get' . $methodName] = true;
@@ -399,9 +406,9 @@ class Model extends Component
         foreach ($fields as $field) {
             if ($field->getType() === Column::TYPE_CHAR) {
                 if ($this->options->get('camelize')) {
-                    $fieldName = Utils::lowerCamelize($field->getName());
+                    $fieldName = Utils::lowerCamelize(Utils::camelize($field->getName(), '_-'));
                 } else {
-                    $fieldName = $field->getName();
+                    $fieldName = Utils::lowerCamelize(Utils::camelize($field->getName(), '-'));
                 }
                 $domain = [];
                 if (preg_match('/\((.*)\)/', $field->getType(), $matches)) {
@@ -416,9 +423,9 @@ class Model extends Component
             }
             if ($field->getName() == 'email') {
                 if ($this->options->get('camelize')) {
-                    $fieldName = Utils::lowerCamelize($field->getName());
+                    $fieldName = Utils::lowerCamelize(Utils::camelize($field->getName(), '_-'));
                 } else {
-                    $fieldName = $field->getName();
+                    $fieldName = Utils::lowerCamelize(Utils::camelize($field->getName(), '-'));
                 }
                 $validations[] = $this->snippet->getValidateEmail($fieldName);
                 $uses[] = $this->snippet->getUseAs(EmailValidator::class, 'EmailValidator');
@@ -458,11 +465,12 @@ class Model extends Component
                 continue;
             }
             $type = $this->getPHPType($field->getType());
-            $fieldName = $this->options->get('camelize') ? Utils::lowerCamelize($field->getName()) : $field->getName();
+            $fieldName = Utils::lowerCamelizeWithDelimiter($field->getName(), '-', true);
+            $fieldName = $this->options->get('camelize') ? Utils::lowerCamelize($fieldName) : $fieldName;
             $attributes[] = $this->snippet->getAttributes($type, $useSettersGetters ? 'protected' : 'public', $field, $this->options->has( 'annotate' ), $fieldName);
-            if ($useSettersGetters) {
-                $methodName   = Utils::camelize($field->getName());
 
+            if ($useSettersGetters) {
+                $methodName = Utils::camelize($field->getName(). '_-');
                 $setters[] = $this->snippet->getSetter($fieldName, $type, $methodName);
 
                 if (isset($this->_typeMap[$type])) {
@@ -546,7 +554,7 @@ class Model extends Component
 
         if ($this->isConsole()) {
             $msgSuccess = ($this->options->contains('abstract') ? 'Abstract ' : '') . 'Model "%s" was successfully created.';
-            $this->notifySuccess(sprintf($msgSuccess, Utils::camelize($this->options->get('name'))));
+            $this->notifySuccess(sprintf($msgSuccess, Text::camelize($this->options->get('name'), '_-')));
         }
     }
 
