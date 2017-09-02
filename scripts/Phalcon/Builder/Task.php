@@ -72,7 +72,7 @@ class Task extends Component
             $subdir = $this->options->get('subdir');
         }
         if (!empty($subdir)) {
-            $subdir = Utils::camelize($subdir);
+            $subdir = Utils::camelizeWithSlash($subdir);
         }
 
         $namespace = '';
@@ -84,7 +84,7 @@ class Task extends Component
             $namespace = 'namespace ' . $config->task->namespace . ';' . PHP_EOL . PHP_EOL;
             // DONE(limx):如果有子目录，则重写命名空间
             if (!empty($subdir)) {
-                $namespace = 'namespace ' . $config->task->namespace . '\\' . $subdir . ';' . PHP_EOL . PHP_EOL;
+                $namespace = 'namespace ' . $config->task->namespace . '\\' . Utils::camelizeWithSlash($subdir, '\\') . ';' . PHP_EOL . PHP_EOL;
             }
         }
 
