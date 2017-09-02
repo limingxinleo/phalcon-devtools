@@ -71,17 +71,20 @@ class Controller extends Component
         if ($this->options->contains('subdir')) {
             $subdir = $this->options->get('subdir');
         }
+        if (!empty($subdir)) {
+            $subdir = Utils::camelize($subdir);
+        }
 
         $namespace = '';
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
-            $namespace = 'namespace '.$this->options->get('namespace').';'.PHP_EOL.PHP_EOL;
+            $namespace = 'namespace ' . $this->options->get('namespace') . ';' . PHP_EOL . PHP_EOL;
         }
         // DONE(limx): 如果设置了命名空间，默认使用命名空间
         if (empty($namespace) && !empty($config->controller->namespace)) {
             $namespace = 'namespace ' . $config->controller->namespace . ';' . PHP_EOL . PHP_EOL;
             // DONE(limx):如果有子目录，则重写命名空间
             if (!empty($subdir)) {
-                $namespace = 'namespace ' . $config->controller->namespace . '\\' . Utils::camelize($subdir) . ';' . PHP_EOL . PHP_EOL;
+                $namespace = 'namespace ' . $config->controller->namespace . '\\' . $subdir . ';' . PHP_EOL . PHP_EOL;
             }
         }
 
@@ -136,7 +139,7 @@ class Controller extends Component
             $useDefinition = join("\n", $uses) . PHP_EOL . PHP_EOL;
         }
 
-        $code = "<?php\n\n".$namespace.$useDefinition."class ".$className."Controller extends ".$baseClass."\n{\n\n\tpublic function indexAction()\n\t{\n\n\t}\n\n}\n\n";
+        $code = "<?php\n\n" . $namespace . $useDefinition . "class " . $className . "Controller extends " . $baseClass . "\n{\n\n\tpublic function indexAction()\n\t{\n\n\t}\n\n}\n\n";
         $code = str_replace("\t", "    ", $code);
 
         if (file_exists($controllerPath) && !$this->options->contains('force')) {

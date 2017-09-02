@@ -71,6 +71,9 @@ class Logic extends Component
         if ($this->options->contains('subdir')) {
             $subdir = $this->options->get('subdir');
         }
+        if (!empty($subdir)) {
+            $subdir = Utils::camelize($subdir);
+        }
 
         $namespace = '';
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
@@ -81,7 +84,7 @@ class Logic extends Component
             $namespace = 'namespace ' . $config->logic->namespace . ';' . PHP_EOL . PHP_EOL;
             // DONE(limx):如果有子目录，则重写命名空间
             if (!empty($subdir)) {
-                $namespace = 'namespace ' . $config->logic->namespace . '\\' . Utils::camelize($subdir) . ';' . PHP_EOL . PHP_EOL;
+                $namespace = 'namespace ' . $config->logic->namespace . '\\' . $subdir . ';' . PHP_EOL . PHP_EOL;
             }
         }
 
