@@ -55,7 +55,7 @@ class Utils
 
     /**
      * Convert string foo_bar to FooBar or fooBar
-     * 
+     *
      * <code>
      * echo Phalcon\Utils::lowerCamelizeWithDelimiter('coco_bongo'); // coco_bongo
      * echo Phalcon\Utils::lowerCamelizeWithDelimiter('coco_bongo', '_'); // CocoBongo
@@ -72,7 +72,7 @@ class Utils
         if (empty($string)) {
             throw new \InvalidArgumentException('Please, specify the string');
         }
-        
+
         if (!empty($delimiter)) {
             $delimiterArray = str_split($delimiter);
 
@@ -83,11 +83,11 @@ class Utils
                 $string = implode('', $stringParts);
             }
         }
-        
+
         if ($useLow) {
             $string = lcfirst($string);
         }
-        
+
         return $string;
     }
 
@@ -129,5 +129,29 @@ class Utils
         }
 
         return null;
+    }
+
+    /**
+     * Convert string foo_bar/biz_bar to FooBar\BizBar
+     *
+     * <code>
+     * echo Phalcon\Utils::camelizeWithWithSlash('coco_bongo'); // cocoBongo
+     * echo Phalcon\Utils::camelizeWithWithSlash('coco_bongo', '_'); // CocoBongo
+     * echo Phalcon\Utils::camelizeWithWithSlash('coco_bongo/biz_bar'); // CocoBongo\BizBar
+     * </code>
+     *
+     * @param string $string
+     * @param string $delimiter
+     * @return string
+     */
+    public static function camelizeWithSlash($string, $end = '/', $delimiter = '_')
+    {
+        $array = explode("/", $string);
+        $result = '';
+        foreach ($array as $item) {
+            $result .= static::camelize($item, $delimiter) . $end;
+        }
+        $result = rtrim($result, $end);
+        return $result;
     }
 }
