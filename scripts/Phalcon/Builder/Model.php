@@ -29,6 +29,7 @@ use Phalcon\Generator\Snippet;
 use Phalcon\Db\ReferenceInterface;
 use Phalcon\Validation\Validator\Email as EmailValidator;
 use Phalcon\Text;
+use \Phalcon\Db\Adapter\Pdo;
 
 
 /**
@@ -146,7 +147,11 @@ class Model extends Component
             $this->path->setRootPath($this->options->get('directory'));
         }
 
-        $config = $this->getConfig();
+        if (gettype($this->options->get('config')) == 'object') {
+            $config = $this->options->get('config');
+        } else {
+            $config = $this->getConfig();
+        }
 
         if (!$modelsDir = $this->options->get('modelsDir')) {
             if (!$config->get('application') || !isset($config->get('application')->modelsDir)) {
@@ -241,15 +246,9 @@ class Model extends Component
         if (!$db->tableExists($table, $schema)) {
             throw new BuilderException(sprintf('Table "%s" does not exist.', $table));
         }
-        $fields = $db->describeColumns($table, $schema);
 
-        if (!$this->options->contains('referenceList')) {
-            foreach ($db->listTables($schema) as $name) {
-                $referenceList[$name] = $db->describeReferences($name, $schema);;
-            }
-        } else {
-            $referenceList = $this->options->get('referenceList');
-        }
+        $fields = $db->describeColumns($table, $schema);
+        $referenceList = $this->getReferenceList($schema, $db);
 
         foreach ($referenceList as $tableName => $references) {
             foreach ($references as $reference) {
@@ -281,7 +280,7 @@ class Model extends Component
         foreach ($db->describeReferences($this->options->get('name'), $schema) as $reference) {
             $entityNamespace = '';
             if ($this->options->contains('namespace')) {
-                $entityNamespace = $this->options->get('namespace')."\\";
+                $entityNamespace = $this->options->get('namespace');
             }
             // DONE(limx): 如果设置了命名空间则当$entityNamespace为空时，默认使用设置的默认命名空间
             if (empty($entityNamespace) && !empty($config->model->namespace)) {
@@ -470,7 +469,7 @@ class Model extends Component
             $attributes[] = $this->snippet->getAttributes($type, $useSettersGetters ? 'protected' : 'public', $field, $this->options->has( 'annotate' ), $fieldName);
 
             if ($useSettersGetters) {
-                $methodName = Utils::camelize($field->getName(). '_-');
+                $methodName = Utils::camelize($field->getName(), '_-');
                 $setters[] = $this->snippet->getSetter($fieldName, $type, $methodName);
 
                 if (isset($this->_typeMap[$type])) {
@@ -564,5 +563,26 @@ class Model extends Component
         $fqcn = "{$namespace}\\{$referencedTable}";
 
         return $fqcn;
+    }
+
+    /**
+     * Get reference list from option
+     *
+     * @param string $schema
+     * @param Pdo $db
+     * @return array
+     */
+    protected function getReferenceList($schema, Pdo $db)
+    {
+        if ($this->options->contains('referenceList')) {
+            return $this->options->get('referenceList');
+        }
+
+        $referenceList = [];
+        foreach ($db->listTables($schema) as $name) {
+            $referenceList[$name] = $db->describeReferences($name, $schema);;
+        }
+
+        return $referenceList;
     }
 }

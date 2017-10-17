@@ -114,7 +114,7 @@ This command should display something similar to:
 ```sh
 $ phalcon --help
 
-Phalcon DevTools (3.2.0)
+Phalcon DevTools (3.2.7)
 
 Help:
   Lists the commands available in Phalcon devtools
@@ -152,7 +152,7 @@ $config = [
 
 ## Configuration file
 
-By creating **phalcon.json** or any other configuration file called **phalcon** in root project you can set options for all possible commands, for example:
+By creating **config.json** or any other configuration file called **config** in root project you can set options for all possible commands, for example:
 
 ```json
 {

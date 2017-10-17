@@ -4,7 +4,7 @@
   +------------------------------------------------------------------------+
   | Phalcon Developer Tools                                                |
   +------------------------------------------------------------------------+
-  | Copyright (c) 2011-2016 Phalcon Team (https://www.phalconphp.com)      |
+  | Copyright (c) 2011-2017 Phalcon Team (https://www.phalconphp.com)      |
   +------------------------------------------------------------------------+
   | This source file is subject to the New BSD License that is bundled     |
   | with this package in the file LICENSE.txt.                             |
@@ -37,11 +37,14 @@ use Phalcon\Db\Dialect\MysqlExtended;
 use Phalcon\Db\Adapter\Pdo\MysqlExtended as AdapterMysqlExtended;
 use Phalcon\Db\Dialect\PostgresqlExtended;
 use Phalcon\Db\Adapter\Pdo\PostgresqlExtended as AdapterPostgresqlExtended;
+use Phalcon\Utils\Nullify;
+use Phalcon\Listeners\DbProfilerListener;
 
 /**
  * Phalcon\Mvc\Model\Migration
  *
  * Migrations of DML y DDL over databases
+ * @method afterCreateTable()
  *
  * @package Phalcon\Mvc\Model
  */
@@ -85,11 +88,12 @@ class Migration
      * Prepares component
      *
      * @param \Phalcon\Config $database Database config
+     * @param bool $verbose array with settings
      * @since 3.2.1 Using Postgresql::describeReferences and PostgresqlExtended dialect class
      *
      * @throws \Phalcon\Db\Exception
      */
-    public static function setup($database)
+    public static function setup($database, $verbose = false)
     {
         if (!isset($database->adapter)) {
             throw new DbException('Unspecified database Adapter in your configuration!');
@@ -127,24 +131,18 @@ class Migration
             self::$_connection->setDialect(new PostgresqlExtended);
         }
 
-        if (Migrations::isConsole()) {
-            $profiler = new Profiler();
-
-            $eventsManager = new EventsManager();
-            $eventsManager->attach(
-                'db',
-                function ($event, $connection) use ($profiler) {
-                    if ($event->getType() == 'beforeQuery') {
-                        $profiler->startProfile($connection->getSQLStatement());
-                    }
-                    if ($event->getType() == 'afterQuery') {
-                        $profiler->stopProfile();
-                    }
-                }
-            );
-
-            self::$_connection->setEventsManager($eventsManager);
+        if (!Migrations::isConsole() || !$verbose) {
+            return;
         }
+
+        $eventsManager = new EventsManager();
+
+        $eventsManager->attach(
+            'db',
+            new DbProfilerListener()
+        );
+
+        self::$_connection->setEventsManager($eventsManager);
     }
 
     /**
@@ -451,7 +449,7 @@ class Migration
         return $classData;
     }
 
-    public static function migrate($fromVersion, $toVersion, $tableName, $direction = self::DIRECTION_FORWARD)
+    public static function migrate($fromVersion, $toVersion, $tableName)
     {
         if (!is_object($fromVersion)) {
             $fromVersion = VersionCollection::createItem($fromVersion);
@@ -461,7 +459,7 @@ class Migration
             $toVersion = VersionCollection::createItem($toVersion);
         }
 
-        if ($fromVersion->getStamp() == $toVersion->getStamp() && self::DIRECTION_FORWARD == $direction) {
+        if ($fromVersion->getStamp() == $toVersion->getStamp()) {
             return; // nothing to do
         }
 
@@ -608,6 +606,7 @@ class Migration
     {
         $defaultSchema = Utils::resolveDbSchema(self::$_databaseConfig);
         $tableExists = self::$_connection->tableExists($tableName, $defaultSchema);
+        $tableSchema = null;
 
         if (isset($definition['columns'])) {
             if (count($definition['columns']) == 0) {
@@ -624,6 +623,9 @@ class Migration
                  * @var \Phalcon\Db\ColumnInterface[] $fields
                  */
                 $fields[$tableColumn->getName()] = $tableColumn;
+                if (empty($tableSchema)) {
+                    $tableSchema = $tableColumn->getSchemaName();
+                }
             }
 
             if ($tableExists == true) {
@@ -792,9 +794,9 @@ class Migration
                 foreach ($definition['indexes'] as $tableIndex) {
                     if (!isset($localIndexes[$tableIndex->getName()])) {
                         if ($tableIndex->getName() == 'PRIMARY') {
-                            self::$_connection->addPrimaryKey($tableName, $tableColumn->getSchemaName(), $tableIndex);
+                            self::$_connection->addPrimaryKey($tableName, $tableSchema, $tableIndex);
                         } else {
-                            self::$_connection->addIndex($tableName, $tableColumn->getSchemaName(), $tableIndex);
+                            self::$_connection->addIndex($tableName, $tableSchema, $tableIndex);
                         }
                     } else {
                         $changed = false;
@@ -810,19 +812,19 @@ class Migration
                         }
                         if ($changed == true) {
                             if ($tableIndex->getName() == 'PRIMARY') {
-                                self::$_connection->dropPrimaryKey($tableName, $tableColumn->getSchemaName());
+                                self::$_connection->dropPrimaryKey($tableName, $tableSchema);
                                 self::$_connection->addPrimaryKey(
                                     $tableName,
-                                    $tableColumn->getSchemaName(),
+                                    $tableSchema,
                                     $tableIndex
                                 );
                             } else {
                                 self::$_connection->dropIndex(
                                     $tableName,
-                                    $tableColumn->getSchemaName(),
+                                    $tableSchema,
                                     $tableIndex->getName()
                                 );
-                                self::$_connection->addIndex($tableName, $tableColumn->getSchemaName(), $tableIndex);
+                                self::$_connection->addIndex($tableName, $tableSchema, $tableIndex);
                             }
                         }
                     }
@@ -860,7 +862,8 @@ class Migration
                 $line
             );
 
-            self::$_connection->insert($tableName, $values, $fields);
+            $nullify = new Nullify();
+            self::$_connection->insert($tableName, $nullify($values), $fields);
             unset($line);
         }
         fclose($batchHandler);
@@ -882,12 +885,28 @@ class Migration
         self::$_connection->begin();
         self::$_connection->delete($tableName);
         $batchHandler = fopen($migrationData, 'r');
-        while (($line = fgets($batchHandler)) !== false) {
-            $data = explode('|', rtrim($line), 2);
-            self::$_connection->delete($tableName, 'id=?', [$data[0]]);
+        while (($line = fgetcsv($batchHandler)) !== false) {
+            $values = array_map(
+                function ($value) {
+                    return null === $value ? null : $value;
+                },
+                $line
+            );
+
+            self::$_connection->delete($tableName, 'id=?', [$values[0]]);
             unset($line);
         }
         fclose($batchHandler);
         self::$_connection->commit();
+    }
+
+    /**
+     * Get db connection
+     *
+     * @return \Phalcon\Db\AdapterInterface
+     */
+    public function getConnection()
+    {
+        return self::$_connection;
     }
 }
