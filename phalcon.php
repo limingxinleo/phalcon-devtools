@@ -70,7 +70,6 @@ try {
         Console::class,
 
         Task::class,
-        Logic::class,
         Job::class,
     ];
 
