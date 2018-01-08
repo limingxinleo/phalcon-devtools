@@ -194,6 +194,12 @@ class Model extends Component
             require_once $config->devtools->loader;
         }
 
+        if (isset($config->devtools->loadClass)) {
+            foreach($config->devtools->loadClass as $loadClass){
+                require_once $loadClass;
+            }
+        }
+
         $namespace = '';
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
             $namespace = 'namespace '.$this->options->get('namespace').';'.PHP_EOL.PHP_EOL;
