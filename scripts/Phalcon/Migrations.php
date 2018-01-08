@@ -223,6 +223,8 @@ class Migrations
         ModelMigration::setup($optionStack->getOption('config')->database, $optionStack->getOption('verbose'));
         ModelMigration::setMigrationPath($migrationsDir);
         self::connectionSetup($optionStack->getOptions());
+
+        /** @var \Phalcon\Version\IncrementalItem $initialVersion */
         $initialVersion = self::getCurrentVersion($optionStack->getOptions());
         $completedVersions = self::getCompletedVersions($optionStack->getOptions());
 
@@ -250,6 +252,8 @@ class Migrations
         // Run migration
         $versionsBetween = VersionCollection::between($initialVersion, $finalVersion, $versionItems);
         $prefix = $optionStack->getPrefixOption($optionStack->getOption('tableName'));
+
+        /** @var \Phalcon\Version\IncrementalItem $versionItem */
         foreach ($versionsBetween as $versionItem) {
 
             // If we are rolling back, we skip migrating when initialVersion is the same as current
@@ -482,7 +486,7 @@ class Migrations
      * Get latest completed migration version
      *
      * @param array $options Applications options
-     * @return ItemInterface
+     * @return \Phalcon\Version\IncrementalItem|\Phalcon\Version\TimestampedItem.
      */
     public static function getCurrentVersion($options)
     {
@@ -535,7 +539,7 @@ class Migrations
             $connection->insert(self::MIGRATION_LOG_TABLE, [$version, $startTime, $endTime], ['version', 'start_time', 'end_time']);
         } else {
             $currentVersions = self::getCompletedVersions($options);
-            $currentVersions[(string)$version] = 1;
+            $currentVersions[$version] = 1;
             $currentVersions = array_keys($currentVersions);
             sort($currentVersions);
             file_put_contents(self::$_storage, implode("\n", $currentVersions));
@@ -558,7 +562,7 @@ class Migrations
             $connection->execute('DELETE FROM '. self::MIGRATION_LOG_TABLE .' WHERE version=\'' . $version . '\'');
         } else {
             $currentVersions = self::getCompletedVersions($options);
-            unset($currentVersions[(string)$version]);
+            unset($currentVersions[$version]);
             $currentVersions = array_keys($currentVersions);
             sort($currentVersions);
             file_put_contents(self::$_storage, implode("\n", $currentVersions));

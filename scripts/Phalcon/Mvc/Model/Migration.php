@@ -45,6 +45,11 @@ use Phalcon\Listeners\DbProfilerListener;
  *
  * Migrations of DML y DDL over databases
  * @method afterCreateTable()
+ * @method morph()
+ * @method up()
+ * @method afterUp()
+ * @method down()
+ * @method afterDown()
  *
  * @package Phalcon\Mvc\Model
  */
@@ -148,7 +153,7 @@ class Migration
     /**
      * Set the skip auto increment value
      *
-     * @param string $skip
+     * @param bool $skip
      */
     public static function setSkipAutoIncrement($skip)
     {
@@ -300,7 +305,7 @@ class Migration
                 $fieldDefinition[] = "'autoIncrement' => true";
             }
 
-            if (self::$_databaseConfig->adapter == 'Postgresql' &&
+            if (self::$_databaseConfig->path('adapter') == 'Postgresql' &&
                 in_array($field->getType(), [Column::TYPE_BOOLEAN, Column::TYPE_INTEGER, Column::TYPE_BIGINTEGER])
             ) {
                 // nothing
@@ -449,6 +454,12 @@ class Migration
         return $classData;
     }
 
+    /**
+     * Migrate
+     * @param \Phalcon\Version\IncrementalItem|\Phalcon\Version\TimestampedItem $fromVersion
+     * @param \Phalcon\Version\IncrementalItem|\Phalcon\Version\TimestampedItem $toVersion
+     * @param string  $tableName
+     */
     public static function migrate($fromVersion, $toVersion, $tableName)
     {
         if (!is_object($fromVersion)) {
@@ -597,8 +608,8 @@ class Migration
     /**
      * Look for table definition modifications and apply to real table
      *
-     * @param $tableName
-     * @param $definition
+     * @param string $tableName
+     * @param array $definition
      *
      * @throws \Phalcon\Db\Exception
      */
@@ -614,14 +625,12 @@ class Migration
             }
 
             $fields = [];
+            /** @var \Phalcon\Db\ColumnInterface $tableColumn */
             foreach ($definition['columns'] as $tableColumn) {
                 if (!is_object($tableColumn)) {
                     throw new DbException('Table must have at least one column');
                 }
-                /**
-                 * @var \Phalcon\Db\ColumnInterface   $tableColumn
-                 * @var \Phalcon\Db\ColumnInterface[] $fields
-                 */
+                /** @var \Phalcon\Db\ColumnInterface[] $fields */
                 $fields[$tableColumn->getName()] = $tableColumn;
                 if (empty($tableSchema)) {
                     $tableSchema = $tableColumn->getSchemaName();
@@ -857,7 +866,7 @@ class Migration
         while (($line = fgetcsv($batchHandler)) !== false) {
             $values = array_map(
                 function ($value) {
-                    return null === $value ? null : $value;
+                    return null === $value ? null : stripslashes($value);
                 },
                 $line
             );
@@ -888,7 +897,7 @@ class Migration
         while (($line = fgetcsv($batchHandler)) !== false) {
             $values = array_map(
                 function ($value) {
-                    return null === $value ? null : $value;
+                    return null === $value ? null : stripslashes($value);
                 },
                 $line
             );

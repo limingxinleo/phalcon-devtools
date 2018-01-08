@@ -322,7 +322,7 @@ abstract class Command implements CommandsInterface
     /**
      * Check that a set of parameters has been received.
      *
-     * @param $required
+     * @param array $required
      *
      * @throws CommandsException
      */
@@ -337,7 +337,7 @@ abstract class Command implements CommandsInterface
 
     /**
      * Sets the output encoding of the script.
-     * @param $encoding
+     * @param string $encoding
      *
      * @return $this
      */
@@ -422,7 +422,7 @@ abstract class Command implements CommandsInterface
     /**
      * Indicates whether the script was a particular option.
      *
-     * @param  string  $option
+     * @param  string | string[]  $option
      * @return boolean
      */
     public function isReceivedOption($option)
@@ -443,8 +443,8 @@ abstract class Command implements CommandsInterface
     /**
      * Filters a value
      *
-     * @param $paramValue
-     * @param $filters
+     * @param mixed $paramValue
+     * @param array $filters
      *
      * @return mixed
      */
@@ -458,7 +458,7 @@ abstract class Command implements CommandsInterface
     /**
      * Gets the last parameter is not associated with any parameter name.
      *
-     * @return string
+     * @return string | bool
      */
     public function getLastUnNamedParam()
     {
@@ -474,7 +474,7 @@ abstract class Command implements CommandsInterface
     /**
      * Checks if exists a certain unnamed parameter
      *
-     * @param $number
+     * @param int $number
      *
      * @return bool
      */

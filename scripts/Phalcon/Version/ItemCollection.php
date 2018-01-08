@@ -65,7 +65,7 @@ class ItemCollection
      *
      * @param null|string $version
      *
-     * @return ItemInterface
+     * @return IncrementalItem|TimestampedItem
      */
     public static function createItem($version = null)
     {
@@ -85,7 +85,7 @@ class ItemCollection
     /**
      * Check if provided version is correct
      *
-     * @param $version
+     * @param string $version
      *
      * @return bool
      */
@@ -141,7 +141,7 @@ class ItemCollection
      *
      * @param array $versions
      *
-     * @return null|ItemInterface
+     * @return null | ItemInterface | IncrementalItem
      */
     public static function maximum(array $versions)
     {
@@ -160,22 +160,11 @@ class ItemCollection
      * @param ItemInterface   $finalVersion
      * @param ItemInterface[] $versions
      *
-     * @return ItemInterface[]|array
+     * @return ItemInterface[] | array
      */
-    public static function between(
-        ItemInterface $initialVersion,
-        ItemInterface $finalVersion,
-        array $versions
-    ) {
+    public static function between(ItemInterface $initialVersion, ItemInterface $finalVersion, array $versions)
+    {
         $versions = self::sortAsc($versions);
-
-        if (!is_object($initialVersion)) {
-            $initialVersion = self::createItem($initialVersion);
-        }
-
-        if (!is_object($finalVersion)) {
-            $finalVersion = self::createItem($finalVersion);
-        }
 
         $betweenVersions = array();
         if ($initialVersion->getStamp() == $finalVersion->getStamp()) {
