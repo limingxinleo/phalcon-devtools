@@ -135,6 +135,10 @@ if (file_exists('app' . DS . 'bootstrap.php')) {
     require_once 'app' . DS . 'bootstrap.php';
 }
 
+if (file_exists('bootstrap' . DS . 'bootstrap.php')) {
+    require_once 'bootstrap' . DS . 'bootstrap.php';
+}
+
 if (Version::getId() < COMPATIBLE_VERSION) {
     throw new Exception(
         "Your Phalcon version isn't compatible with Developer Tools, " .
