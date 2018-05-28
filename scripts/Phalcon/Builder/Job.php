@@ -131,7 +131,7 @@ class Job extends Component
 
         $useDefinition = "";
         // DONE(limx):如果有子目录，则修改文件目录
-        $uses[] = 'use App\Jobs\Contract\JobInterface;';
+        $uses[] = 'use Xin\Swoole\Queue\JobInterface;';
         if (!empty($uses)) {
             $useDefinition = join("\n", $uses) . PHP_EOL . PHP_EOL;
         }
