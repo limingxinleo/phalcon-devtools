@@ -76,17 +76,22 @@ class Controller extends Component
         }
 
         $namespace = '';
+        $namespaceClass = '';
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
-            $namespace = 'namespace ' . $this->options->get('namespace') . ';' . PHP_EOL . PHP_EOL;
+            $namespaceClass = $this->options->get('namespace');
         }
-        // DONE(limx): 如果设置了命名空间，默认使用命名空间
-        if (empty($namespace) && !empty($config->controller->namespace)) {
-            $namespace = 'namespace ' . $config->controller->namespace . ';' . PHP_EOL . PHP_EOL;
-            // DONE(limx):如果有子目录，则重写命名空间
-            if (!empty($subdir)) {
-                $namespace = 'namespace ' . $config->controller->namespace . '\\' . Utils::camelizeWithSlash($subdir, '\\') . ';' . PHP_EOL . PHP_EOL;
-            }
+        if (empty($namespaceClass) && !empty($config->controller->namespace)) {
+            $namespaceClass = $config->controller->namespace;
         }
+        // 如果设置了子目录，则在命名空间后面跟上子目录。
+        if (!empty($subdir) && $namespaceClass) {
+            $namespaceClass = $namespaceClass . '\\' . Utils::camelizeWithSlash($subdir, '\\');
+        }
+
+        if ($namespaceClass) {
+            $namespace = 'namespace ' . $namespaceClass . ';' . PHP_EOL . PHP_EOL;
+        }
+
 
         $baseClass = $this->options->get('baseClass');
         // DONE(limx): 如果在配置中设置过基类，默认使用基类，如果没有设置，则使用 \Phalcon\Mvc\Controller

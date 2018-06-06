@@ -76,16 +76,20 @@ class Task extends Component
         }
 
         $namespace = '';
+        $namespaceClass = '';
         if ($this->options->contains('namespace') && $this->checkNamespace($this->options->get('namespace'))) {
-            $namespace = 'namespace ' . $this->options->get('namespace') . ';' . PHP_EOL . PHP_EOL;
+            $namespaceClass = $this->options->get('namespace');
         }
-        // DONE(limx): 如果设置了命名空间，默认使用命名空间
-        if (empty($namespace) && !empty($config->task->namespace)) {
-            $namespace = 'namespace ' . $config->task->namespace . ';' . PHP_EOL . PHP_EOL;
-            // DONE(limx):如果有子目录，则重写命名空间
-            if (!empty($subdir)) {
-                $namespace = 'namespace ' . $config->task->namespace . '\\' . Utils::camelizeWithSlash($subdir, '\\') . ';' . PHP_EOL . PHP_EOL;
-            }
+        if (empty($namespaceClass) && !empty($config->task->namespace)) {
+            $namespaceClass = $config->task->namespace;
+        }
+        // 如果设置了子目录，则在命名空间后面跟上子目录。
+        if (!empty($subdir) && $namespaceClass) {
+            $namespaceClass = $namespaceClass . '\\' . Utils::camelizeWithSlash($subdir, '\\');
+        }
+
+        if ($namespaceClass) {
+            $namespace = 'namespace ' . $namespaceClass . ';' . PHP_EOL . PHP_EOL;
         }
 
         $baseClass = $this->options->get('baseClass');
